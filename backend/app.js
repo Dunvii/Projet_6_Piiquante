@@ -47,4 +47,11 @@ app.use('/api/stuff', (req, res, next) => {
   res.status(200).json(stuff);
 });
 
+app.post('/api/stuff', (req, res, next) => {
+  console.log(req.body);
+  res.status(201).json({
+    message: 'Objet créé !'
+  });
+});
+
 module.exports = app;
