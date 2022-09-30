@@ -92,12 +92,24 @@ exports.likeSystem = (req, res, next) => {
   delete req.body.userId;
   switch (lasauce) {
      case 1:
-      Sauce.updateOne(
-        { _id: req.params.id },
-        { $push: { usersLiked: req.auth.userId }, $inc: { likes: +1 } }
-      )
-        .then(() => res.status(200).json({ message: 'like !' }))
-        .catch((error) => res.status(400).json({ error }));
+      Sauce.findOne({ _id: req.params.id })
+        .then((sauce) => {
+          if(sauce.usersLiked.includes(req.auth.userId)){
+            res.status(409).json({ message: 'Sauce déjà liké' });
+          }
+          if(sauce.usersDisliked.includes(req.auth.userId)){
+            res.status(409).json({ message: 'Vous ne pouvez pas liké et dislike la même sauce' });
+          }
+          else {
+            Sauce.updateOne(
+              { _id: req.params.id },
+              { $push: { usersLiked: req.auth.userId }, $inc: { likes: +1 } }
+            )
+              .then(() => res.status(200).json({ message: 'like !' }))
+              .catch((error) => res.status(400).json({ error }));
+          }
+        })
+        .catch((error) => res.status(404).json({ message: 'sauce introuvé'}));
       break;
      case 0:
       Sauce.findOne({ _id: req.params.id })
@@ -129,14 +141,24 @@ exports.likeSystem = (req, res, next) => {
         .catch((error) => res.status(404).json({ error }));
       break;
     case -1:
-      Sauce.updateOne(
-        { _id: req.params.id },
-        { $push: { usersDisliked: req.auth.userId }, $inc: { dislikes: +1 } }
-      )
-        .then(() => {
-          res.status(200).json({ message: 'Dislike en vue !' });
+      Sauce.findOne({ _id: req.params.id })
+        .then((sauce) => {
+          if(sauce.usersDisliked.includes(req.auth.userId)){
+            res.status(409).json({ message: 'Sauce déjà disliké' });
+          }
+          if(sauce.usersLiked.includes(req.auth.userId)){
+            res.status(409).json({ message: 'Vous ne pouvez pas liké et dislike la même sauce' });
+          }
+          else {
+            Sauce.updateOne(
+              { _id: req.params.id },
+              { $push: { usersDisliked: req.auth.userId }, $inc: { dislikes: +1 } }
+            )
+              .then(() => res.status(200).json({ message: 'Dislike !' }))
+              .catch((error) => res.status(400).json({ error }));
+          }
         })
-        .catch((error) => res.status(400).json({ error }));
+        .catch((error) => res.status(404).json({ message: 'sauce introuvé'}));
       break;
     default:
       console.log(error);
