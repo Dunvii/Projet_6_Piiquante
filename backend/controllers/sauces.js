@@ -10,7 +10,7 @@ exports.getAllSauces = (req, res, next) => {
         (error) => {
           res.status(400).json({
             error: error,
-            message: "Impossible de charger les sauces"
+            message: "Error to connect to database"
           });
         }
       );
@@ -27,7 +27,7 @@ exports.getOneSauce = (req, res, next) => {
       (error) => {
         res.status(404).json({
           error: error,
-          message : "Sauce introuvable"
+          message : "Sauce not find"
         });
       }
     );
@@ -37,16 +37,17 @@ exports.deleteOneSauce = (req, res, next) => {
   Sauce.findOne({_id: req.params.id})
     .then((sauce) => {
       if(sauce.userId != req.auth.userId) {
-        res.status(409).json({ message : "Vous ne pouvez pas supprimé une sauce qui ne vous appartient pas"});
+        res.status(409).json({ message : "Can't change sauce who is not yours"});
       }
       else {
         Sauce.deleteOne({_id: req.params.id})
           .then((sauce) => {
-            res.status(200).json({ message: "Sauce supprimé"});
+            res.status(200).json({ message: "Sauce delete"});
           })
-          .catch((error) => { res.status(500).json({ message: "Probleme serveur"})});
+          .catch((error) => { res.status(500).json({ message: "Server problem"})});
       }
-  });
+  })
+  .catch((error) => { res.status(404).json({ message: "Sauce not find"})});
 }
 
 exports.createSauce = (req, res, next) => {
@@ -60,11 +61,11 @@ exports.createSauce = (req, res, next) => {
   });
   if(req.auth.userId == bodyReq.userId) {
     lasauce.save()
-    .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
-    .catch(() => { res.status(500).json({ message: 'Erreur serveur'})});
+    .then(() => { res.status(201).json({message: 'Sauce create'})})
+    .catch(() => { res.status(500).json({ message: 'Server problem'})});
   }
   else {
-    res.status(409).json({message: "Vous ne pouvez pâs creer une sauce au nom d'un autre utlisateur."});
+    res.status(409).json({message: "Can't create sauce from other users"});
   }
 };
 
@@ -78,21 +79,20 @@ exports.modifySauce = (req, res, next) => {
   Sauce.findOne({_id: req.params.id})
       .then((sauce) => {
           if (sauce.userId != req.auth.userId) {
-              res.status(401).json({ message : 'Not authorized'});
+              res.status(409).json({ message : "Can't modify sauce of other users"});
           } else {
               Sauce.updateOne({ _id: req.params.id}, { ...lasauce, _id: req.params.id})
-              .then(() => res.status(200).json({message : 'Objet modifié!'}))
+              .then(() => res.status(200).json({message : 'Sauce update'}))
               .catch(error => res.status(401).json({ error }));
           }
       })
       .catch((error) => {
-          res.status(400).json({ error });
+          res.status(500).json({ message: 'Server problem' });
       });
 };
 
 exports.likeSystem = (req, res, next) => {
   const lasauce = JSON.parse(req.body.like);
-  delete req.body.userId;
   switch (lasauce) {
      case 1:
       Sauce.findOne({ _id: req.params.id })
